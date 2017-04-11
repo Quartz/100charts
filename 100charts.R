@@ -37,11 +37,15 @@ data <- data %>%
 i = 0
 
 # Shortcut for generating a simple line chart
-line.chart <- function(title, y, y.label) {
-  ggplot(data=data, aes_string(x="year", y=y)) +
-    geom_line() + 
+line.chart <- function(title, y, y.label, zero.line = FALSE) {
+  plot <- ggplot(data=data, aes_string(x="year", y=y)) +
     labs(title = title, x = "Year", y = y.label) +
-    scale_x_continuous(breaks = c(1930, 1940, 1950, 1960, 1970, 1980, 1990, 2000, 2010))
+    scale_x_continuous(breaks = c(1930, 1940, 1950, 1960, 1970, 1980, 1990, 2000, 2010)) +
+    geom_line()
+  
+  if (zero.line) {
+    plot + geom_hline(yintercept = 0, color="#666666")
+  }
   
   ggsave(
     paste("charts/", i, ".", y, ".jpg", sep=""),
@@ -93,7 +97,8 @@ data$dev.from.mean <- data$real - mean(data$real)
 line.chart(
   "Real deviation from all-time average tax",
   "dev.from.mean",
-  "Constant 2016 dollars"
+  "Constant 2016 dollars",
+  zero.line = TRUE
 )
 
 # Real deviation from base period mean
@@ -102,7 +107,8 @@ data$dev.from.period <- data$real - mean(data[data$year >= 1980 & data$year < 19
 line.chart(
   "Real deviation from 1980's average",
   "dev.from.period",
-  "Constant 2016 dollars"
+  "Constant 2016 dollars",
+  zero.line = TRUE
 )
 
 # Z-Scores
@@ -112,37 +118,62 @@ line.chart(
 ### MEASURES OF CHANGE
 ###
 
-# Real change
-data <- data %>%
-  mutate(change = real - first(real))
-
-line.chart(
-  "Real annual change in personal tax receipts",
-  "change",
-  "Constant 2016 dollars"
-)
-
 # Real year-over-year change
 data <- data %>%
   mutate(yoy = real - lag(real))
 
-# Real annual percent change
+line.chart(
+  "Real year-over-year change in personal tax receipts",
+  "yoy",
+  "Constant 2016 dollars",
+  zero.line = TRUE
+)
+
+# Real year-over-year percent change
 data <- data %>%
   mutate(pct.change = real / lag(real))
+
+line.chart(
+  "Real year-over-year percent change in personal tax receipts",
+  "pct.change",
+  "%",
+  zero.line = TRUE
+)
 
 # Cumulative percent change
 data <- data %>%
   mutate(cum.pct.change = real / first(real))
 
+line.chart(
+  "Real percent change in personal tax receipts since 1929",
+  "cum.pct.change",
+  "%"
+)
+
 # Real index to initial year
 data <- data %>%
   mutate(index = real / (first(real) / 100))
+
+line.chart(
+  "Indexed real change in personal tax receipts",
+  "cum.pct.change",
+  "Index value (1929 = 100)"
+)
 
 # Real index to low year
 # TKTK
 
 # Real index to high year
-# TKTK
+base <- data[data$year == 1945,]$real
+
+data <- data %>%
+  mutate(index.high = real / (base / 100))
+
+line.chart(
+  "Indexed real change in personal tax receipts",
+  "index.high",
+  "Index value (1945 = 100)"
+)
 
 ###
 ### MEASURES OF PROPORTION
